@@ -9,13 +9,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Controller;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
@@ -25,29 +24,27 @@ import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
 
 @Controller
 @RequestMapping("/bookingservice")
 @RequiredArgsConstructor
+
 @Slf4j
 public class FooBarController {
 
 
     private final AppService appService;
 
+    @Mock
     private JavaMailSender emailSender;
 
-    @Autowired
+    @InjectMocks
     private EmailService emailService;
 
     @PostConstruct
     public void init(){
-        emailSender = mock(JavaMailSender.class);
+        MockitoAnnotations.openMocks(this);
         doNothing().when(emailSender).send(any(SimpleMailMessage.class));
-        emailService = new EmailService();
-        ReflectionTestUtils.setField(emailService, "emailSender", emailSender);
-
     }
 
 
@@ -92,6 +89,7 @@ public class FooBarController {
     @GetMapping("/bookings/dobusiness/{booking_id}")
     public ResponseEntity<CustomerOnboarding> getBusinessResultForDepartmentOfBooking(@PathVariable("booking_id")Integer bookingId)  {
         CustomerOnboarding customerOnboarding = appService.getBusinessResultForDepartmentOfBooking(bookingId);
+
         emailService.sendSimpleMessage("test@statista.de","Onboarding Confirmation","Congratulations, You have been onboarded!!");
         return new ResponseEntity<CustomerOnboarding>(customerOnboarding, HttpStatus.OK);
     }
