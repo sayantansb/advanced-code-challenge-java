@@ -4,6 +4,7 @@ import com.statista.code.challenge.App;
 import com.statista.code.challenge.dao.AppDAO;
 import com.statista.code.challenge.domain.*;
 import junit.framework.TestCase;
+import org.javamoney.moneta.Money;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,11 +46,13 @@ public class AppServiceTest extends TestCase {
     @Before
     public void createTestBooking(){
         booking = new Booking();
-        booking.setCurrency(CurrencyTypes.AUD);
+        //booking.setCurrency(CurrencyTypes.AUD);
+        Money usd = Money.of(29.95, "USD");
+        booking.setMonetaryAmount(usd);
         booking.setDepartment("marketing");
         booking.setDescription("Booking for Test");
         booking.setEmail("abc@xyz.com");
-        booking.setPrice(BigDecimal.valueOf(2345.45));
+   //     booking.setMonetaryAmount(BigDecimal.valueOf(2345.45));
         booking.setSubscriptionStartDate(683124845099L);
     }
 
@@ -66,12 +69,14 @@ public class AppServiceTest extends TestCase {
         when(appDAO.updateBooking(any(Booking.class),any(Integer.class))).thenReturn(true);
         Integer bookingId = appService.createBooking(booking);
         booking.setId(bookingId);
-        booking.setPrice(BigDecimal.valueOf(121L));
-        booking.setCurrency(CurrencyTypes.CHF);
+     //   booking.setMonetaryAmount(BigDecimal.valueOf(121L));
+     //   booking.setCurrency(CurrencyTypes.CHF);
+        Money usd = Money.of(121, "CHF");
+        booking.setMonetaryAmount(usd);
         appService.updateBooking(booking,bookingId);
         assertEquals(Integer.valueOf(1),booking.getId());
-        assertEquals(CurrencyTypes.CHF,booking.getCurrency());
-        assertEquals(BigDecimal.valueOf(121L),booking.getPrice());
+        assertEquals(CurrencyTypes.CHF.name(),booking.getMonetaryAmount().getCurrency().getCurrencyCode());
+        assertEquals(121L,booking.getMonetaryAmount().getNumber().longValue());
     }
 
     @Test

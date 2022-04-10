@@ -4,6 +4,7 @@ import com.statista.code.challenge.App;
 import com.statista.code.challenge.database.MockDB;
 import com.statista.code.challenge.domain.Booking;
 import com.statista.code.challenge.domain.CurrencyTypes;
+import org.javamoney.moneta.Money;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,11 +32,13 @@ public class AppDAOTest {
     @Before
     public void createTestBooking(){
         booking = new Booking();
-        booking.setCurrency(CurrencyTypes.AUD);
+     //   booking.setCurrency(CurrencyTypes.AUD);
+        Money usd = Money.of(29.95, "AUD");
+        booking.setMonetaryAmount(usd);
         booking.setDepartment("marketing");
         booking.setDescription("Booking for Test");
         booking.setEmail("abc@xyz.com");
-        booking.setPrice(BigDecimal.valueOf(2345.45));
+        //booking.setMonetaryAmount(BigDecimal.valueOf(2345.45));
         booking.setSubscriptionStartDate(683124845099L);
     }
 
@@ -59,10 +62,12 @@ public class AppDAOTest {
         Integer bookingId = appDAO.createBooking(booking);
         Assert.assertEquals(1,MockDB.bookingIdListByDepartmentIdMap.get("marketing").size());
         Assert.assertEquals(1,MockDB.pricesForBookingsByCurrencyMap.get(CurrencyTypes.AUD).size());
-        booking.setCurrency(CurrencyTypes.USD);
+        //booking.setCurrency(CurrencyTypes.USD);
+        Money usd = Money.of(29.95, "USD");
+        booking.setMonetaryAmount(usd);
         booking.setDepartment("sales");
         appDAO.updateBooking(booking,bookingId);
-        Assert.assertEquals(CurrencyTypes.USD,MockDB.bookingMap.get(bookingId).getCurrency());
+        Assert.assertEquals(CurrencyTypes.USD.name(),MockDB.bookingMap.get(bookingId).getMonetaryAmount().getCurrency().getCurrencyCode());
         Assert.assertEquals("sales",MockDB.bookingMap.get(bookingId).getDepartment());
         Assert.assertEquals(0,MockDB.bookingIdListByDepartmentIdMap.get("marketing").size());
         Assert.assertEquals(0,MockDB.pricesForBookingsByCurrencyMap.get(CurrencyTypes.AUD).size());
@@ -99,9 +104,11 @@ public class AppDAOTest {
     public void testGetSumForCurrency() {
         appDAO.createBooking(booking);
         Booking anotherBooking = new Booking(booking);
-        anotherBooking.setPrice(BigDecimal.valueOf(1234.45));
+        Money usd = Money.of(1234.45, "AUD");
+        anotherBooking.setMonetaryAmount(usd);
+        //anotherBooking.setMonetaryAmount(BigDecimal.valueOf(1234.45));
         appDAO.createBooking(anotherBooking);
-        Double sumForCurrency = appDAO.getSumForCurrency(booking.getCurrency());
-        Assert.assertEquals(Double.valueOf("3579.9"),sumForCurrency);
+        Double sumForCurrency = appDAO.getSumForCurrency(CurrencyTypes.valueOf(booking.getMonetaryAmount().getCurrency().getCurrencyCode()));
+        Assert.assertEquals(Double.valueOf("1264.4"),sumForCurrency);
     }
 }

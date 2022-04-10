@@ -42,7 +42,8 @@ public class AppDAO {
             booking.setId(this.generateNextID("booking"));
             insertBookingInDB(booking);
             updateBookingIdListForDepartment(booking.getDepartment(),booking.getId());
-            updatePricesByCurrencyMap(booking.getCurrency(),booking.getPrice(),booking.getId());
+            //updatePricesByCurrencyMap(booking.getCurrency(),booking.getPrice(),booking.getId());
+            updatePricesByCurrencyMap(CurrencyTypes.valueOf(booking.getMonetaryAmount().getCurrency().getCurrencyCode()),BigDecimal.valueOf(booking.getMonetaryAmount().getNumber().doubleValue()),booking.getId());
             return booking.getId();
         }catch (Exception ex){
             log.error("Exception in persisting booking : ",ex);
@@ -62,7 +63,8 @@ public class AppDAO {
             removePriceByCurrencyMap(Id);
             updateBookingInDB(existingBooking,Id);
             updateBookingIdListForDepartment(existingBooking.getDepartment(),existingBooking.getId());
-            updatePricesByCurrencyMap(existingBooking.getCurrency(),existingBooking.getPrice(),Id);
+//            updatePricesByCurrencyMap(existingBooking.getCurrency(),existingBooking.getPrice(),Id);
+            updatePricesByCurrencyMap(CurrencyTypes.valueOf(existingBooking.getMonetaryAmount().getCurrency().getCurrencyCode()),BigDecimal.valueOf(booking.getMonetaryAmount().getNumber().doubleValue()),Id);
             return true;
         }catch (Exception ex){
             log.error("Exception in updating booking : ",ex);

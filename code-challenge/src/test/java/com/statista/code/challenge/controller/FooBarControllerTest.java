@@ -3,7 +3,9 @@ package com.statista.code.challenge.controller;
 import com.statista.code.challenge.domain.*;
 import com.statista.code.challenge.exception.ObjectNotFoundException;
 import com.statista.code.challenge.service.AppService;
+import com.statista.code.challenge.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
+import org.javamoney.moneta.Money;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +18,13 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashSet;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -39,13 +42,16 @@ public class FooBarControllerTest {
     @MockBean
     private AppService appService;
 
+    @MockBean
+    private EmailService emailService;
+
     @Test
     void createBooking() throws Exception {
 
         when(appService.createBooking(any(Booking.class))).thenReturn(Integer.valueOf(100));
         mockMvc.perform(post("/bookingservice/bookings")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"id\":null,\"department\":\"marketing\",\"price\":2345.45,\"email\":\"abc@xyz.com\",\"currency\":\"AUD\",\"subscription_start_date\":683124845099,\"description\":\"Booking for Test\"}"))
+                .content("{\"department\":\"department1\",\"monetaryAmount\":{\"price\":122.00,\"currency\":\"EUR\"},\"email\":\"myemail1@server.com\",\"subscription_start_date\":683124845135,\"description\":\"This is first booking\"}"))
                 .andExpect(
                         status().isCreated()
                 )
@@ -60,7 +66,7 @@ public class FooBarControllerTest {
         when(appService.updateBooking(any(Booking.class),any(Integer.class))).thenReturn(true);
         mockMvc.perform(put("/bookingservice/bookings/100")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"department\":\"marketing\",\"price\":2345.45,\"email\":\"abc@xyz.com\",\"currency\":\"AUD\",\"subscription_start_date\":683124845099,\"description\":\"Booking for Test\"}"))
+                        .content("{\"department\":\"department1\",\"monetaryAmount\":{\"price\":122.00,\"currency\":\"EUR\"},\"email\":\"myemail1@server.com\",\"subscription_start_date\":683124845135,\"description\":\"This is first booking\"}"))
                 .andExpect(
                         status().isOk()
                 )
@@ -68,22 +74,22 @@ public class FooBarControllerTest {
                         content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(
-                        MockMvcResultMatchers.jsonPath("$.department", is("marketing"))
+                        MockMvcResultMatchers.jsonPath("$.department", is("department1"))
                 )
                 .andExpect(
-                        MockMvcResultMatchers.jsonPath("$.price", is(Double.valueOf("2345.45")))
+                        MockMvcResultMatchers.jsonPath("$.monetaryAmount.price", is(Double.valueOf("122.00")))
                 )
                 .andExpect(
-                        MockMvcResultMatchers.jsonPath("$.email", is("abc@xyz.com"))
+                        MockMvcResultMatchers.jsonPath("$.email", is("myemail1@server.com"))
                 )
                 .andExpect(
-                        MockMvcResultMatchers.jsonPath("$.currency", is("AUD"))
+                        MockMvcResultMatchers.jsonPath("$.monetaryAmount.currency", is("EUR"))
                 )
                 .andExpect(
-                        MockMvcResultMatchers.jsonPath("$.subscription_start_date", is(Long.valueOf("683124845099")))
+                        MockMvcResultMatchers.jsonPath("$.subscription_start_date", is(Long.valueOf("683124845135")))
                 )
                 .andExpect(
-                        MockMvcResultMatchers.jsonPath("$.description", is("Booking for Test"))
+                        MockMvcResultMatchers.jsonPath("$.description", is("This is first booking"))
                 );
 
     }
@@ -91,11 +97,11 @@ public class FooBarControllerTest {
     @Test
     void getBookingById() throws Exception {
         Booking booking = new Booking();
-        booking.setCurrency(CurrencyTypes.AUD);
         booking.setDepartment("marketing");
         booking.setDescription("Booking for Test");
         booking.setEmail("abc@xyz.com");
-        booking.setPrice(BigDecimal.valueOf(2345.45));
+        Money usd = Money.of(29.95, "USD");
+        booking.setMonetaryAmount(usd);
         booking.setSubscriptionStartDate(683124845099L);
         when(appService.getBookingById(any(Integer.class))).thenReturn(booking);
 
@@ -106,9 +112,9 @@ public class FooBarControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.department", is("marketing")))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.price", is(2345.45)))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.monetaryAmount.price", is(29.95)))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email", is("abc@xyz.com")))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.currency", is("AUD")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.monetaryAmount.currency", is("USD")))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.subscription_start_date", is(Long.valueOf("683124845099"))))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.description", is("Booking for Test")))
                 .andReturn();
@@ -199,7 +205,7 @@ public class FooBarControllerTest {
         when(appService.createBooking(any(Booking.class))).thenReturn(Integer.valueOf(100));
         mockMvc.perform(post("/bookingservice/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":null,\"price\":2345.45,\"email\":\"abc@xyz.com\",\"currency\":\"AUD\",\"subscription_start_date\":683124845099,\"description\":\"Booking for Test\"}"))
+                        .content("{\"monetaryAmount\":{\"price\":122.00,\"currency\":\"EUR\"},\"email\":\"myemail1@server.com\",\"subscription_start_date\":683124845135,\"description\":\"Thisisfirstbooking\"}"))
                 .andExpect(
                         status().isBadRequest()
                 );
@@ -211,7 +217,7 @@ public class FooBarControllerTest {
         when(appService.createBooking(any(Booking.class))).thenReturn(Integer.valueOf(100));
         mockMvc.perform(post("/bookingservice/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":null,\"department\":\"marketing\",\"price\":2345.45,\"email\":\"abc@xyz.com\",\"currency\":\"CNY\",\"subscription_start_date\":683124845099,\"description\":\"Booking for Test\"}"))
+                        .content("{\"department\":\"department1\",\"monetaryAmount\":{\"price\":122.00,\"currency\":\"ZZZ\"},\"email\":\"myemail1@server.com\",\"subscription_start_date\":683124845135,\"description\":\"This is first booking\"}"))
                 .andExpect(
                         status().isBadRequest()
                 );
@@ -223,7 +229,7 @@ public class FooBarControllerTest {
         when(appService.createBooking(any(Booking.class))).thenReturn(Integer.valueOf(100));
         mockMvc.perform(post("/bookingservice/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":null,\"department\":\"marketing\",\"price\":2345.45,\"email\":\"invalid\",\"currency\":\"SGD\",\"subscription_start_date\":683124845099,\"description\":\"Booking for Test\"}"))
+                        .content("{\"department\":\"department1\",\"monetaryAmount\":{\"price\":122.00,\"currency\":\"EUR\"},\"email\":\"invalid_email\",\"subscription_start_date\":683124845135,\"description\":\"This is firstbooking\"}"))
                 .andExpect(
                         status().isBadRequest()
                 );
@@ -231,6 +237,7 @@ public class FooBarControllerTest {
 
     @Test
     void getBusinessResultForDepartmentOfBooking_null_department() throws Exception {
+        doNothing().when(emailService).sendSimpleMessage(anyString(),anyString(),anyString());
         when(appService.getBusinessResultForDepartmentOfBooking(any(Integer.class))).thenThrow(new ObjectNotFoundException("No department found in Booking","Department"));
         mockMvc.perform(get("/bookingservice/bookings/dobusiness/{booking_id}",Integer.valueOf(1))
                         .contentType(MediaType.APPLICATION_JSON)

@@ -3,6 +3,6 @@ spring:
     password: testpassword
     username: testuser
     host: 127.0.0.1
-    port: 2500 # default protocol port + 3000 as offset
+    port: 2500
     protocol: smtp
-    test-connection: false # avoid setting this to true when using a per-test-method GreenMail server
+    test-connection: false
