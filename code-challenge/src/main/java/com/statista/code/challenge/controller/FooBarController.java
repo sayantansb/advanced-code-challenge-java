@@ -7,8 +7,6 @@ import com.statista.code.challenge.service.AppService;
 import com.statista.code.challenge.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,9 +43,7 @@ public class FooBarController {
     public void init(){
         emailSender = mock(JavaMailSender.class);
         doNothing().when(emailSender).send(any(SimpleMailMessage.class));
-        emailService = new EmailService();
         ReflectionTestUtils.setField(emailService, "emailSender", emailSender);
-
     }
 
 
